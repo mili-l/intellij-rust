@@ -122,14 +122,13 @@ jobs:
             # `fromJSON` is used here to convert string output to boolean
             fail-fast: ${{ fromJSON(needs.calculate-git-info.outputs.is_bors_branch) }}
             matrix:
-                include:
-                    - os: windows-latest
-                      wsl-distribution: Ubuntu-18.04
-                      rust-version: 1.53.0
-                      base-ide: idea
-                      platform-version: 211
-                      resolve-engine: resolve-old
-                      verify-plugin: true
+                os: [ windows-latest ]
+                wsl-distribution: [ Ubuntu-18.04 ]
+                rust-version: [ 1.53.0 ]
+                base-ide: [ idea ]
+                platform-version: [ 211, 212 ]
+                resolve-engine: [ resolve-new ]
+                verify-plugin: [ true ]
 
         runs-on: ${{ matrix.os }}
         timeout-minutes: 120
@@ -146,25 +145,6 @@ jobs:
               with:
                   java-version: 11
 
-            - name: Set up Rust
-              if: matrix.wsl-distribution == null
-              uses: actions-rs/toolchain@v1
-              with:
-                  profile: minimal
-                  toolchain: ${{ matrix.rust-version }}
-                  components: rust-src, rustfmt, clippy
-                  default: true
-
-            # Requires for tests with overridden toolchain
-            - name: Set up nightly Rust
-              if: matrix.wsl-distribution == null
-              uses: actions-rs/toolchain@v1
-              with:
-                  profile: minimal
-                  toolchain: nightly
-                  components: rust-src
-                  default: false
-
             - name: Set up WSL
               if: matrix.wsl-distribution != null
               uses: Vampire/setup-wsl@v1
@@ -174,16 +154,16 @@ jobs:
 
             - name: Set up WSL 2
               if: matrix.wsl-distribution != null
-              run: lxrun /setdefaultuser test
+              run: C:\hostedtoolcache\windows\Ubuntu\18.4.0\x64\ubuntu1804.exe config --default-user test
 
             - name: Set up WSL Rust
               if: matrix.wsl-distribution != null
-              shell: wsl-bash {0}
               run: |
                   curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain ${{ matrix.rust-version }} --profile minimal -c rust-src rustfmt clippy
                   source $HOME/.cargo/env
                   rustup install --profile minimal nightly
                   rustup +nightly component add rust-src
+              shell: wsl-bash {0}
 
             - name: Cache evcxr
               uses: actions/cache@v2
