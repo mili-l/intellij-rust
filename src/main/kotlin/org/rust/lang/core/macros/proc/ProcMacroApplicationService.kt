@@ -8,23 +8,29 @@ package org.rust.lang.core.macros.proc
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
+import org.rust.cargo.toolchain.RsToolchainBase
+import org.rust.cargo.toolchain.wsl.RsWslToolchain
 import org.rust.ide.experiments.RsExperiments
 import org.rust.openapiext.isFeatureEnabled
 
 @Service
 class ProcMacroApplicationService : Disposable {
 
-    private var sharedServer: ProcMacroServerPool? = null
+    private var sharedServerLocal: ProcMacroServerPool? = null
+    private var sharedServerWsl: ProcMacroServerPool? = null
 
     @Synchronized
-    fun getServer(project: Project): ProcMacroServerPool? {
+    fun getServer(toolchain: RsToolchainBase): ProcMacroServerPool? {
         if (!isEnabled()) return null
 
-        var server = sharedServer
+        var server = if (toolchain is RsWslToolchain) sharedServerWsl else sharedServerLocal
         if (server == null) {
-            server = ProcMacroServerPool.tryCreate(project, this)
-            sharedServer = server
+            server = ProcMacroServerPool.tryCreate(toolchain, this)
+            if (toolchain is RsWslToolchain) {
+                sharedServerWsl = server
+            } else {
+                sharedServerLocal = server
+            }
         }
         return server
     }

@@ -28,6 +28,8 @@ class RsWslToolchain(
     override val executionTimeoutInMilliseconds: Int = 5000
 
     override fun patchCommandLine(commandLine: GeneralCommandLine): GeneralCommandLine {
+        commandLine.exePath = toRemotePath(commandLine.exePath)
+
         val parameters = commandLine.parametersList.list.map { toRemotePath(it) }
         commandLine.parametersList.clearAll()
         commandLine.parametersList.addAll(parameters)

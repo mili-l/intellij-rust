@@ -215,7 +215,9 @@ class Cargo(toolchain: RsToolchainBase, useWrapper: Boolean = false)
 
         for (line in processOutput.stdoutLines) {
             val jsonObject = tryParseJsonObject(line) ?: continue
-            CompilerMessage.fromJson(jsonObject)?.let { messages.getOrPut(it.package_id) { mutableListOf() } += it }
+            CompilerMessage.fromJson(jsonObject)
+                ?.convertPaths(toolchain::toLocalPath)
+                ?.let { messages.getOrPut(it.package_id) { mutableListOf() } += it }
         }
         return BuildMessages(messages)
     }

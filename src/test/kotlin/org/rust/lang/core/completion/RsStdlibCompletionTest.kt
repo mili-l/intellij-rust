@@ -8,6 +8,7 @@ package org.rust.lang.core.completion
 import com.intellij.openapi.util.SystemInfo
 import org.rust.*
 import org.rust.cargo.project.workspace.CargoWorkspace
+import org.rust.cargo.toolchain.wsl.RsWslToolchain
 import org.rust.lang.core.macros.MacroExpansionScope
 
 @ProjectDescriptor(WithStdlibRustProjectDescriptor::class)
@@ -92,7 +93,7 @@ class RsStdlibCompletionTest : RsCompletionTestBase() {
     @ExpandMacros(MacroExpansionScope.ALL, "actual_std")
     @ProjectDescriptor(WithActualStdlibRustProjectDescriptor::class)
     fun `test complete items from 'os' module unix`() {
-        if (!SystemInfo.isUnix) return
+        if (!SystemInfo.isUnix && toolchain !is RsWslToolchain) return
         doSingleCompletion("""
             use std::os::uni/*caret*/
         """, """
@@ -103,7 +104,7 @@ class RsStdlibCompletionTest : RsCompletionTestBase() {
     @ExpandMacros(MacroExpansionScope.ALL, "actual_std")
     @ProjectDescriptor(WithActualStdlibRustProjectDescriptor::class)
     fun `test complete items from 'os' module windows`() {
-        if (!SystemInfo.isWindows) return
+        if (!SystemInfo.isWindows || toolchain is RsWslToolchain) return
         doSingleCompletion("""
             use std::os::win/*caret*/
         """, """

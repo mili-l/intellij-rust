@@ -7,6 +7,8 @@ package org.rust.lang.core.macros.proc
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
+import org.rust.cargo.project.settings.toolchain
+import org.rust.cargo.toolchain.RsToolchainBase
 import org.rust.lang.core.macros.*
 import org.rust.lang.core.macros.errors.ProcMacroExpansionError
 import org.rust.lang.core.macros.errors.ProcMacroExpansionError.ExecutableNotFound
@@ -25,7 +27,8 @@ import java.util.concurrent.TimeoutException
 
 class ProcMacroExpander(
     private val project: Project,
-    private val server: ProcMacroServerPool? = ProcMacroApplicationService.getInstance().getServer(project),
+    toolchain: RsToolchainBase? = project.toolchain,
+    private val server: ProcMacroServerPool? = toolchain?.let { ProcMacroApplicationService.getInstance().getServer(it) },
     private val timeout: Long = Registry.get("org.rust.macros.proc.timeout").asInteger().toLong(),
 ) : MacroExpander<RsProcMacroData, ProcMacroExpansionError>() {
     private val isEnabled: Boolean = if (server != null) true else ProcMacroApplicationService.isEnabled()

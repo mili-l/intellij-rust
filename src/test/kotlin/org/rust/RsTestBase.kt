@@ -31,6 +31,7 @@ import org.rust.cargo.project.model.RustcInfo
 import org.rust.cargo.project.model.impl.testCargoProjects
 import org.rust.cargo.project.workspace.CargoWorkspace
 import org.rust.cargo.project.workspace.PackageFeature
+import org.rust.cargo.toolchain.RsToolchainBase
 import org.rust.cargo.toolchain.RustChannel
 import org.rust.cargo.toolchain.impl.RustcVersion
 import org.rust.lang.core.macros.macroExpansionManager
@@ -38,7 +39,6 @@ import org.rust.openapiext.document
 import org.rust.openapiext.saveAllDocuments
 import org.rust.stdext.BothEditions
 import org.rust.stdext.RsResult
-import org.rust.stdext.toResult
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.full.createInstance
 
@@ -47,6 +47,8 @@ abstract class RsTestBase : BasePlatformTestCase(), RsTestCase {
     // Needed for assertion that the directory doesn't accidentally renamed during the test
     private var tempDirRootUrl: String? = null
     private var tempDirRoot: VirtualFile? = null
+
+    protected open val toolchain: RsToolchainBase? by lazy { RsToolchainBase.suggest() }
 
     override fun getProjectDescriptor(): LightProjectDescriptor {
         val annotation = findAnnotationInstance<ProjectDescriptor>() ?: return DefaultDescriptor

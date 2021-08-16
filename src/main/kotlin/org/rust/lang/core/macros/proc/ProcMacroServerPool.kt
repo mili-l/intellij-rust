@@ -13,15 +13,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.google.common.annotations.VisibleForTesting
+import com.intellij.execution.configuration.EnvironmentVariablesData
 import com.intellij.execution.process.ProcessIOExecutorService
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapiext.isUnitTestMode
 import com.intellij.util.concurrency.AppExecutorUtil
-import org.rust.cargo.project.settings.toolchain
+import org.rust.cargo.toolchain.BacktraceMode
+import org.rust.cargo.toolchain.RsToolchainBase
 import org.rust.cargo.toolchain.wsl.RsWslToolchain
 import org.rust.lang.core.macros.MACRO_LOG
 import org.rust.lang.core.macros.tt.TokenTree
@@ -31,6 +32,7 @@ import org.rust.openapiext.RsPathManager
 import org.rust.stdext.*
 import java.io.*
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.*
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.Lock
@@ -38,11 +40,12 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 class ProcMacroServerPool private constructor(
+    toolchain: RsToolchainBase,
     expanderExecutable: Path,
     parentDisposable: Disposable
 ) {
     private val pool = Pool(4) {
-        ProcMacroServerProcess.createAndRun(expanderExecutable) // Throws ProcessCreationException
+        ProcMacroServerProcess.createAndRun(toolchain, expanderExecutable) // Throws ProcessCreationException
     }
 
     init {
@@ -60,17 +63,17 @@ class ProcMacroServerPool private constructor(
     }
 
     companion object {
-        fun tryCreate(project: Project, parentDisposable: Disposable): ProcMacroServerPool? {
-            val expanderExecutable = RsPathManager.nativeHelper(project.toolchain is RsWslToolchain)
+        fun tryCreate(toolchain: RsToolchainBase, parentDisposable: Disposable): ProcMacroServerPool? {
+            val expanderExecutable = RsPathManager.nativeHelper(toolchain is RsWslToolchain)
             if (expanderExecutable == null || !expanderExecutable.isExecutable()) {
                 return null
             }
-            return createUnchecked(expanderExecutable, parentDisposable)
+            return createUnchecked(toolchain, expanderExecutable, parentDisposable)
         }
 
         @VisibleForTesting
-        fun createUnchecked(expanderExecutable: Path, parentDisposable: Disposable): ProcMacroServerPool {
-            return ProcMacroServerPool(expanderExecutable, parentDisposable)
+        fun createUnchecked(toolchain: RsToolchainBase, expanderExecutable: Path, parentDisposable: Disposable): ProcMacroServerPool {
+            return ProcMacroServerPool(toolchain, expanderExecutable, parentDisposable)
         }
     }
 }
@@ -287,16 +290,24 @@ private class ProcMacroServerProcess private constructor(private val process: Pr
 
     companion object {
         @Throws(ProcessCreationException::class)
-        fun createAndRun(expanderExecutable: Path): ProcMacroServerProcess {
+        fun createAndRun(toolchain: RsToolchainBase, expanderExecutable: Path): ProcMacroServerProcess {
             MACRO_LOG.debug { "Starting proc macro expander process $expanderExecutable" }
+
+           val commandLine = toolchain.createGeneralCommandLine(
+                expanderExecutable,
+                Paths.get("."),
+                null,
+                BacktraceMode.DEFAULT,
+                // Let a proc macro know that it is ran from intellij-rust
+                EnvironmentVariablesData.create(mapOf("INTELLIJ_RUST" to "1"), true),
+                emptyList(),
+                emulateTerminal = false,
+                withSudo = false,
+                patchToRemote = true
+            )
+
             val process: Process = try {
-                ProcessBuilder(expanderExecutable.toString())
-                    .apply {
-                        environment().apply {
-                            // Let a proc macro know that it is ran from intellij-rust
-                            put("INTELLIJ_RUST", "1")
-                        }
-                    }
+                commandLine.toProcessBuilder()
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start()
             } catch (e: IOException) {

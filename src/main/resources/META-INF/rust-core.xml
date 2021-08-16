@@ -1130,7 +1130,7 @@
         <console.folding implementation="org.rust.ide.console.RsConsoleFolding"/>
 
         <!--  Experimental features -->
-        <experimentalFeature id="org.rust.wsl" percentOfUsers="0">
+        <experimentalFeature id="org.rust.wsl" percentOfUsers="100">
             <description>Enables WSL toolchains</description>
         </experimentalFeature>
         <experimentalFeature id="org.rust.cargo.features.settings.gutter" percentOfUsers="0">
@@ -1149,8 +1149,7 @@
         <!-- Toolchain flavors -->
 
         <toolchainFlavor id="rust.rustupToolchainFlavor"
-                         implementation="org.rust.cargo.toolchain.flavors.RustupToolchainFlavor"
-                         order="first"/>
+                         implementation="org.rust.cargo.toolchain.flavors.RustupToolchainFlavor"/>
 
         <toolchainFlavor id="rust.sysPathToolchainFlavor"
                          implementation="org.rust.cargo.toolchain.flavors.RsSysPathToolchainFlavor"/>
@@ -1165,7 +1164,8 @@
                          implementation="org.rust.cargo.toolchain.flavors.RsWinToolchainFlavor"/>
 
         <toolchainFlavor id="rust.wslToolchainFlavor"
-                         implementation="org.rust.cargo.toolchain.wsl.RsWslToolchainFlavor"/>
+                         implementation="org.rust.cargo.toolchain.wsl.RsWslToolchainFlavor"
+                         order="first"/>
 
     </extensions>
 
