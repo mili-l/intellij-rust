@@ -10,7 +10,7 @@ CHECK_WORKFLOW_PATH = ".github/workflows/check.yml"
 RUSTC_VERSION_RE = re.compile(r".* \(\w*\s*(\d{4}-\d{2}-\d{2})\)")
 WORKFLOW_RUSTC_VERSION_RE = re.compile(r"(rust-version: \[.*nightly-)\d{4}-\d{2}-\d{2}(.*])")
 NIGHTLY_BRANCH = "nightly"
-DEFAULT_ASSIGNEE = "Undin"
+DEFAULT_ASSIGNEE = "mili-l"
 
 
 def main():
