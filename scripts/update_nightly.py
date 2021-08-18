@@ -10,7 +10,7 @@ CHECK_WORKFLOW_PATH = ".github/workflows/check.yml"
 RUSTC_VERSION_RE = re.compile(r".* \(\w*\s*(\d{4}-\d{2}-\d{2})\)")
 WORKFLOW_RUSTC_VERSION_RE = re.compile(r"(rust-version: \[.*nightly-)\d{4}-\d{2}-\d{2}(.*])")
 NIGHTLY_BRANCH = "nightly"
-DEFAULT_ASSIGNEE = "mili-l"
+DEFAULT_ASSIGNEE = "Undin"
 
 
 def main():
@@ -33,13 +33,13 @@ def main():
     date = match_result.group(1)
     with open(CHECK_WORKFLOW_PATH) as f:
         workflow_text = f.read()
+
+    result = re.search(WORKFLOW_RUSTC_VERSION_RE, workflow_text)
+    if result is None:
+        raise ValueError("Failed to find the current version of nightly rust")
+
     new_workflow_text = re.sub(WORKFLOW_RUSTC_VERSION_RE, f"\\g<1>{date}\\g<2>", workflow_text)
     if new_workflow_text == workflow_text:
-        # Usually, nightly compiler is built every day.
-        # But we also need some components like rustfmt, clippy
-        # that can be missing for some nightly builds (see https://rust-lang.github.io/rustup-components-history/).
-        # In this cases, the corresponding GitHib action may use version that we already have.
-        # Do nothing in such situations
         print("The latest nightly rustc version is already used")
         return
 

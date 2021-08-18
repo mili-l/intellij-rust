@@ -3,7 +3,7 @@ name: auto updates
 on:
     workflow_dispatch:
     schedule:
-        - cron: '0 0 * * 1' # try each Wednesday
+        - cron: '0 0 * * 1' # try each Monday
 
 jobs:
     update-nightly:
